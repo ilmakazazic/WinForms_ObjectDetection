@@ -34,6 +34,7 @@
             this.toolStripMenuItemExit = new System.Windows.Forms.ToolStripMenuItem();
             this.startRCNNToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.findContureToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.findROIToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.panel1 = new System.Windows.Forms.Panel();
             this.lblMessage = new System.Windows.Forms.Label();
             this.panel2 = new System.Windows.Forms.Panel();
@@ -52,7 +53,8 @@
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.toolStripMenuItemFile,
             this.startRCNNToolStripMenuItem,
-            this.findContureToolStripMenuItem});
+            this.findContureToolStripMenuItem,
+            this.findROIToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
             this.menuStrip1.Size = new System.Drawing.Size(1584, 28);
@@ -96,6 +98,13 @@
             this.findContureToolStripMenuItem.Text = "Find Conture";
             this.findContureToolStripMenuItem.Click += new System.EventHandler(this.findContureToolStripMenuItem_Click);
             // 
+            // findROIToolStripMenuItem
+            // 
+            this.findROIToolStripMenuItem.Name = "findROIToolStripMenuItem";
+            this.findROIToolStripMenuItem.Size = new System.Drawing.Size(79, 24);
+            this.findROIToolStripMenuItem.Text = "Find ROI";
+            this.findROIToolStripMenuItem.Click += new System.EventHandler(this.findROIToolStripMenuItem_Click);
+            // 
             // panel1
             // 
             this.panel1.Controls.Add(this.lblMessage);
@@ -129,7 +138,7 @@
             // pictureBox2
             // 
             this.pictureBox2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.pictureBox2.Location = new System.Drawing.Point(939, 34);
+            this.pictureBox2.Location = new System.Drawing.Point(806, 34);
             this.pictureBox2.Name = "pictureBox2";
             this.pictureBox2.Size = new System.Drawing.Size(633, 362);
             this.pictureBox2.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
@@ -138,7 +147,7 @@
             // 
             // pictureBox1
             // 
-            this.pictureBox1.Location = new System.Drawing.Point(3, 34);
+            this.pictureBox1.Location = new System.Drawing.Point(133, 34);
             this.pictureBox1.Name = "pictureBox1";
             this.pictureBox1.Size = new System.Drawing.Size(642, 362);
             this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
@@ -183,5 +192,6 @@
         private ToolStripMenuItem startRCNNToolStripMenuItem;
         private ToolStripMenuItem findContureToolStripMenuItem;
         private PictureBox pictureBox2;
+        private ToolStripMenuItem findROIToolStripMenuItem;
     }
 }
