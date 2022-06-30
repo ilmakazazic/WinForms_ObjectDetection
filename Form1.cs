@@ -3,16 +3,21 @@ using Emgu.CV.CvEnum;
 using Emgu.CV.Dnn;
 using Emgu.CV.Structure;
 using Emgu.CV.Util;
+using Microsoft.Data.SqlClient;
 using System.Configuration;
 
 namespace WinForms_ObjectDetection
 {
     public partial class Form1 : Form
     {
+        SqlConnection con = new SqlConnection("Server=.;Database=SmartParking;Trusted_Connection=True;MultipleActiveResultSets=True");
+        SqlCommand cmd;
+
         Dictionary<string, Image<Bgr, byte>> IMGDict;
         VideoCapture videoCapture = null;
         string[] CocoClasses;
         Net CaffeModel = null;
+
         public Form1()
         {
             InitializeComponent();
@@ -52,6 +57,16 @@ namespace WinForms_ObjectDetection
         {
             try
             {
+                Rectangle A1 = new Rectangle(50, 50, 350, 280);
+                Rectangle A2 = new Rectangle(250, 150, 320, 300);
+                Rectangle A3 = new Rectangle(420, 200, 290, 280);
+
+                var rois = new List<Rectangle>(); // List of rois
+                rois.Add(A1);
+                rois.Add(A2);
+                rois.Add(A3);
+
+
                 Mat frame = new Mat();
                 videoCapture.Read(frame);
                 if (frame == null)
@@ -63,11 +78,24 @@ namespace WinForms_ObjectDetection
                 var blob = DnnInvoke.BlobFromImage(img, 1.0, frame.Size, swapRB: true);
                 CaffeModel.SetInput(blob);
 
+                foreach (var roi in rois)
+                {
+                   
+                   img.Draw(roi, new Bgr(0, 0, 255), 2);
+
+                }
+
+
                 var output = new VectorOfMat();
                 string[] outnames = new string[] { "detection_out_final" };
                 CaffeModel.Forward(output, outnames);
 
                 var threshold = 0.6;
+
+                //var grayImage = img.Convert<Gray, Byte>().ThresholdBinary(new Gray(threshold), new Gray(255)); ;
+                //var moment = CvInvoke.Moments(grayImage, true);
+                //Point WeightedCentroid = new Point((int)(moment.M10 / moment.M00), (int)(moment.M01 / moment.M00));
+
 
                 int numDetections = output[0].SizeOfDimension[2];
                 int numClasses = 90;
@@ -81,8 +109,8 @@ namespace WinForms_ObjectDetection
                     {
                         int classID = Convert.ToInt32(bboxes.GetValue(0, 0, i, 1));
 
-                        // only person
-                        //if (classID!=0)
+                        //only person
+                        //if (classID != 3)
                         //{
                         //    continue;
                         //}
@@ -93,7 +121,22 @@ namespace WinForms_ObjectDetection
                         int bottom = Convert.ToInt32((float)bboxes.GetValue(0, 0, i, 6) * img.Rows);
 
                         Rectangle rectangle = new Rectangle(left, top, right - left + 1, bottom - top + 1);
+                        Point WeightedCentroid = new Point((rectangle.Left + rectangle.Right) / 2, (rectangle.Top + rectangle.Bottom) / 2);
+
                         img.Draw(rectangle, new Bgr(0, 0, 255), 2);
+                        CvInvoke.Circle(img, WeightedCentroid, 4, new MCvScalar(0, 255, 0), 5, LineType.EightConnected, 0);
+                        Point WeightedCentroidnew = WeightedCentroid;
+                            CvInvoke.Line(img, WeightedCentroid, WeightedCentroidnew, new MCvScalar(255, 0, 0), 5, LineType.EightConnected, 0);
+                        foreach(var (roi, n) in rois.Select((roi, n) => (roi, n)))
+                        {
+                            if (roi.Contains(WeightedCentroid))
+                            {
+                                img.Draw(roi, new Bgr(0, 255, 0), 2);
+                                updateDatabase("A" + (n+1));
+                            }
+
+                        }
+
                         var labels = CocoClasses[classID];
                         CvInvoke.PutText(img, labels, new Point(left, top - 10), FontFace.HersheySimplex, 1.0,
                             new MCvScalar(0, 255, 0), 2);
@@ -111,6 +154,25 @@ namespace WinForms_ObjectDetection
             {
 
                 throw new Exception(ex.Message);
+            }
+        }
+
+        public void updateDatabase(string oznaka)
+        {
+            try
+            {
+                cmd = new SqlCommand("update Mjesto set Zauzeto=@zauzeto where Oznaka=@oznaka", con);
+                con.Open();
+                cmd.Parameters.AddWithValue("@zauzeto", 1);
+                cmd.Parameters.AddWithValue("@oznaka", oznaka);
+                cmd.ExecuteNonQuery();
+                con.Close();
+
+            }
+            catch (Exception)
+            {
+
+                MessageBox.Show("Record update fail!");
             }
         }
 
@@ -265,41 +327,59 @@ namespace WinForms_ObjectDetection
                 var img = frame.ToImage<Bgr, byte>();
 
 
-                Rectangle A1 = new Rectangle(130, 98, 70, 100);
-                Rectangle A2 = new Rectangle(210, 98, 70, 100);
-                Rectangle A3 = new Rectangle(290, 98, 70, 100);
+                //Rectangle A1 = new Rectangle(130, 98, 70, 100);
+                //Rectangle A2 = new Rectangle(210, 98, 70, 100);
+                //Rectangle A3 = new Rectangle(290, 98, 70, 100);
 
-                Rectangle A4 = new Rectangle(110, 260, 70, 110);
-                Rectangle A5 = new Rectangle(190, 260, 70, 110);
-                Rectangle A6 = new Rectangle(270, 260, 70, 110);
-
-
-
-                Rectangle B1 = new Rectangle(530, 110, 70, 100);
-                Rectangle B2 = new Rectangle(610, 110, 70, 100);
-                Rectangle B3 = new Rectangle(690, 110, 70, 100);
-
-                Rectangle B4 = new Rectangle(540, 260, 70, 110);
-                Rectangle B5 = new Rectangle(620, 260, 70, 110);
-                Rectangle B6 = new Rectangle(700, 260, 70, 110);
+                //Rectangle A4 = new Rectangle(110, 260, 70, 110);
+                //Rectangle A5 = new Rectangle(190, 260, 70, 110);
+                //Rectangle A6 = new Rectangle(270, 260, 70, 110);
 
 
+
+                //Rectangle B1 = new Rectangle(530, 110, 70, 100);
+                //Rectangle B2 = new Rectangle(610, 110, 70, 100);
+                //Rectangle B3 = new Rectangle(690, 110, 70, 100);
+
+                //Rectangle B4 = new Rectangle(540, 260, 70, 110);
+                //Rectangle B5 = new Rectangle(620, 260, 70, 110);
+                //Rectangle B6 = new Rectangle(700, 260, 70, 110);
+
+
+
+                //img.Draw(A1, new Bgr(0, 0, 255), 2);
+                //img.Draw(A2, new Bgr(0, 0, 255), 2);
+                //img.Draw(A3, new Bgr(0, 0, 255), 2);
+                //img.Draw(A4, new Bgr(0, 0, 255), 2);
+                //img.Draw(A5, new Bgr(0, 0, 255), 2);
+                //img.Draw(A6, new Bgr(0, 0, 255), 2);
+
+                //img.Draw(B1, new Bgr(0, 0, 255), 2);
+                //img.Draw(B2, new Bgr(0, 0, 255), 2);
+                //img.Draw(B3, new Bgr(0, 0, 255), 2);
+                //img.Draw(B4, new Bgr(0, 0, 255), 2);
+                //img.Draw(B5, new Bgr(0, 0, 255), 2);
+                //img.Draw(B6, new Bgr(0, 0, 255), 2);
+
+                //idalan za rotaciju
+               // Rectangle A1 = new Rectangle(80, 150, 250, 144);
+
+
+
+                Rectangle A1 = new Rectangle(80, 120, 250, 180);
+                Rectangle A2 = new Rectangle(250, 150, 220, 200);
+                Rectangle A3 = new Rectangle(420, 200, 190, 180);
+
+                //Rectangle A4 = new Rectangle(110, 260, 70, 110);
+                //Rectangle A5 = new Rectangle(190, 260, 70, 110);
+                //Rectangle A6 = new Rectangle(270, 260, 70, 110);
 
                 img.Draw(A1, new Bgr(0, 0, 255), 2);
                 img.Draw(A2, new Bgr(0, 0, 255), 2);
                 img.Draw(A3, new Bgr(0, 0, 255), 2);
-                img.Draw(A4, new Bgr(0, 0, 255), 2);
-                img.Draw(A5, new Bgr(0, 0, 255), 2);
-                img.Draw(A6, new Bgr(0, 0, 255), 2);
-
-                img.Draw(B1, new Bgr(0, 0, 255), 2);
-                img.Draw(B2, new Bgr(0, 0, 255), 2);
-                img.Draw(B3, new Bgr(0, 0, 255), 2);
-                img.Draw(B4, new Bgr(0, 0, 255), 2);
-                img.Draw(B5, new Bgr(0, 0, 255), 2);
-                img.Draw(B6, new Bgr(0, 0, 255), 2);
-
-
+                //img.Draw(A4, new Bgr(0, 0, 255), 2);
+                //img.Draw(A5, new Bgr(0, 0, 255), 2);
+                //img.Draw(A6, new Bgr(0, 0, 255), 2);
 
                 pictureBox2.Image = img.ToBitmap();
             }
@@ -322,13 +402,13 @@ namespace WinForms_ObjectDetection
 
                 var img = frame.ToImage<Bgr, byte>();
 
-                Rectangle A1 = new Rectangle(130, 98, 70, 100);
-                Rectangle A2 = new Rectangle(210, 98, 70, 100);
-                Rectangle A3 = new Rectangle(290, 98, 70, 100);
+                Rectangle A1 = new Rectangle(50, 50, 350, 280);
+                Rectangle A2 = new Rectangle(250, 150, 320, 300);
+                Rectangle A3 = new Rectangle(420, 200, 290, 280);
 
-                Rectangle A4 = new Rectangle(110, 260, 70, 110);
-                Rectangle A5 = new Rectangle(190, 260, 70, 110);
-                Rectangle A6 = new Rectangle(270, 260, 70, 110);
+                //Rectangle A4 = new Rectangle(110, 260, 70, 110);
+                //Rectangle A5 = new Rectangle(190, 260, 70, 110);
+                //Rectangle A6 = new Rectangle(270, 260, 70, 110);
 
 
 
@@ -342,12 +422,12 @@ namespace WinForms_ObjectDetection
 
 
 
-                img.Draw(A1, new Bgr(0, 0, 255), 2);
-                img.Draw(A2, new Bgr(0, 0, 255), 2);
-                img.Draw(A3, new Bgr(0, 0, 255), 2);
-                img.Draw(A4, new Bgr(0, 0, 255), 2);
-                img.Draw(A5, new Bgr(0, 0, 255), 2);
-                img.Draw(A6, new Bgr(0, 0, 255), 2);
+                //img.Draw(A1, new Bgr(0, 0, 255), 2);
+                //img.Draw(A2, new Bgr(0, 0, 255), 2);
+                //img.Draw(A3, new Bgr(0, 0, 255), 2);
+                //img.Draw(A4, new Bgr(0, 0, 255), 2);
+                //img.Draw(A5, new Bgr(0, 0, 255), 2);
+                //img.Draw(A6, new Bgr(0, 0, 255), 2);
 
                 //img.Draw(B1, new Bgr(0, 0, 255), 2);
                 //img.Draw(B2, new Bgr(0, 0, 255), 2);
@@ -357,7 +437,69 @@ namespace WinForms_ObjectDetection
                 //img.Draw(B6, new Bgr(0, 0, 255), 2);
 
 
-                var blob = DnnInvoke.BlobFromImage(img, 1.0, A1.Size, swapRB: true);
+                var rois = new List<Rectangle>(); // List of rois
+                rois.Add(A1);
+                rois.Add(A2);
+                rois.Add(A3);
+                //rois.Add(A4);
+                //rois.Add(A5);
+                //rois.Add(A6);
+
+
+                var imageparts = new List<Image<Bgr, byte>>(); // List of extracted image parts
+
+                using (var image = new Image<Bgr, byte>(img.Width, img.Height))
+                {
+                    foreach (var roi in rois)
+                    {
+                        image.ROI = roi;
+                        imageparts.Add(image.Copy());
+                        img.Draw(roi, new Bgr(0, 0, 255), 2);
+                        if (detectObjectInROI(image))
+                        {
+                            image.Draw(roi, new Bgr(0, 255, 0), 2);
+                            pictureBox1.Image = img.ToBitmap();
+
+                        }
+                    }
+                    //pictureBox1.Invoke((MethodInvoker)delegate
+                    //{
+                    //    pictureBox1.Image = img.ToBitmap();
+
+                    //});
+
+                    //for (int i = 0; i < imageparts.Count; i++)
+                    //{
+                    //    img.Draw(rois[i], new Bgr(0, 0, 255), 2);
+
+                    //    if (detectObjectInROI(imageparts[i]))
+                    //    {
+                    //        image.Draw(rois[i], new Bgr(0, 255, 0), 2);
+                    //        pictureBox1.Image = img.ToBitmap();
+
+                    //    }
+                    //}
+                }
+
+
+                
+
+            }
+            catch (Exception ex)
+            {
+
+                throw new Exception(ex.Message);
+            }
+        }
+
+        public Boolean detectObjectInROI(Image<Bgr, byte>? img)
+        {
+            if(img == null)
+            {
+                return false;
+            }
+          
+            var blob = DnnInvoke.BlobFromImage(img, 1.0, img.Size, swapRB: true);
                 CaffeModel.SetInput(blob);
 
                 var output = new VectorOfMat();
@@ -379,41 +521,17 @@ namespace WinForms_ObjectDetection
                         int classID = Convert.ToInt32(bboxes.GetValue(0, 0, i, 1));
 
                         // only person
-                        if (classID != 2)
+                        if (classID != 3)
                         {
-                            continue;
+                        continue;
                         }
-
-                        //int left = Convert.ToInt32((float)bboxes.GetValue(0, 0, i, 3) * img.Cols);
-                        //int top = Convert.ToInt32((float)bboxes.GetValue(0, 0, i, 4) * img.Rows);
-                        //int right = Convert.ToInt32((float)bboxes.GetValue(0, 0, i, 5) * img.Cols);
-                        //int bottom = Convert.ToInt32((float)bboxes.GetValue(0, 0, i, 6) * img.Rows);
-
-                        //Rectangle rectangle = new Rectangle(left, top, right - left + 1, bottom - top + 1);
-                        //img.Draw(rectangle, new Bgr(0, 0, 255), 2);
-                        //var labels = CocoClasses[classID];
-                        //CvInvoke.PutText(img, labels, new Point(left, top - 10), FontFace.HersheySimplex, 1.0,
-                        //    new MCvScalar(0, 255, 0), 2);
-                        img.Draw(A1, new Bgr(0, 255, 0), 2);
-                        var labels = CocoClasses[classID];
-                        CvInvoke.PutText(img, labels, new Point(530, 503 - 10), FontFace.HersheySimplex, 1.0,
-                            new MCvScalar(0, 255, 0), 2);
-
+                    return true;
                     }
                 }
-
-                pictureBox1.Invoke((MethodInvoker)delegate
-                {
-                    pictureBox1.Image = img.ToBitmap();
-
-                });
-            }
-            catch (Exception ex)
-            {
-
-                throw new Exception(ex.Message);
-            }
+            return false;
+         
         }
 
+       
     }
 }
