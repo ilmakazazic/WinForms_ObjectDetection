@@ -10,13 +10,15 @@ namespace WinForms_ObjectDetection
 {
     public partial class Form1 : Form
     {
-        SqlConnection con = new SqlConnection("Server=.;Database=SmartParking;Trusted_Connection=True;MultipleActiveResultSets=True");
+        SqlConnection con = new SqlConnection("Server=.;Database=SmartParking;Trusted_Connection=True;MultipleActiveResultSets=True;Encrypt=False");
         SqlCommand cmd;
 
         Dictionary<string, Image<Bgr, byte>> IMGDict;
         VideoCapture videoCapture = null;
         string[] CocoClasses;
         Net CaffeModel = null;
+        VideoCapture videoCaptureTest;
+
 
         public Form1()
         {
@@ -57,22 +59,33 @@ namespace WinForms_ObjectDetection
         {
             try
             {
-                Rectangle A1 = new Rectangle(50, 50, 350, 280);
-                Rectangle A2 = new Rectangle(250, 150, 320, 300);
-                Rectangle A3 = new Rectangle(420, 200, 290, 280);
+                Rectangle A1 = new Rectangle(80, 120, 190, 150);
+                Rectangle A2 = new Rectangle(250, 150, 190, 190);
+                Rectangle A3 = new Rectangle(420, 200, 190, 180);
+
+                Rectangle A4 = new Rectangle(280, 40,110, 70);
+                Rectangle A5 = new Rectangle(400, 70, 110, 80);
+                Rectangle A6 = new Rectangle(520, 80, 110, 100);
 
                 var rois = new List<Rectangle>(); // List of rois
                 rois.Add(A1);
                 rois.Add(A2);
-                rois.Add(A3);
+                rois.Add(A3); 
+                rois.Add(A4);
+                rois.Add(A5);
+                rois.Add(A6);
 
+                //Mat frame = new Mat();
+                //videoCapture.Read(frame);
+                //if (frame == null)
+                //{
+                //    return;
+                //}
 
                 Mat frame = new Mat();
-                videoCapture.Read(frame);
-                if (frame == null)
-                {
-                    return;
-                }
+                videoCaptureTest.Retrieve(frame);
+                //pictureBox1.Image = frame.ToImage<Bgr, byte>().AsBitmap();
+
 
                 var img = frame.ToImage<Bgr, byte>();
                 var blob = DnnInvoke.BlobFromImage(img, 1.0, frame.Size, swapRB: true);
@@ -81,7 +94,7 @@ namespace WinForms_ObjectDetection
                 foreach (var roi in rois)
                 {
                    
-                   img.Draw(roi, new Bgr(0, 0, 255), 2);
+                   img.Draw(roi, new Bgr(0, 255, 0), 2);
 
                 }
 
@@ -109,7 +122,7 @@ namespace WinForms_ObjectDetection
                     {
                         int classID = Convert.ToInt32(bboxes.GetValue(0, 0, i, 1));
 
-                        //only person
+                        //only car
                         //if (classID != 3)
                         //{
                         //    continue;
@@ -123,7 +136,7 @@ namespace WinForms_ObjectDetection
                         Rectangle rectangle = new Rectangle(left, top, right - left + 1, bottom - top + 1);
                         Point WeightedCentroid = new Point((rectangle.Left + rectangle.Right) / 2, (rectangle.Top + rectangle.Bottom) / 2);
 
-                        img.Draw(rectangle, new Bgr(0, 0, 255), 2);
+                        img.Draw(rectangle, new Bgr(255, 0, 0), 2);
                         CvInvoke.Circle(img, WeightedCentroid, 4, new MCvScalar(0, 255, 0), 5, LineType.EightConnected, 0);
                         Point WeightedCentroidnew = WeightedCentroid;
                             CvInvoke.Line(img, WeightedCentroid, WeightedCentroidnew, new MCvScalar(255, 0, 0), 5, LineType.EightConnected, 0);
@@ -131,7 +144,7 @@ namespace WinForms_ObjectDetection
                         {
                             if (roi.Contains(WeightedCentroid))
                             {
-                                img.Draw(roi, new Bgr(0, 255, 0), 2);
+                                img.Draw(roi, new Bgr(0, 0, 255), 2);
                                 updateDatabase("A" + (n+1));
                             }
 
@@ -139,7 +152,7 @@ namespace WinForms_ObjectDetection
 
                         var labels = CocoClasses[classID];
                         CvInvoke.PutText(img, labels, new Point(left, top - 10), FontFace.HersheySimplex, 1.0,
-                            new MCvScalar(0, 255, 0), 2);
+                            new MCvScalar(0, 0, 255), 2);
 
                     }
                 }
@@ -169,9 +182,9 @@ namespace WinForms_ObjectDetection
                 con.Close();
 
             }
-            catch (Exception)
+            catch (Exception m)
             {
-
+                var n = m;
                 MessageBox.Show("Record update fail!");
             }
         }
@@ -532,6 +545,53 @@ namespace WinForms_ObjectDetection
          
         }
 
-       
+        private void startCameraToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if(videoCaptureTest == null)
+            {
+                videoCaptureTest = new VideoCapture(0);
+                startMaskRCNN();
+                videoCaptureTest.ImageGrabbed += processObjectDetection;
+                videoCaptureTest.Start();
+            }
+        }
+
+        private void grabbedImageWebCam(object? sender, EventArgs e)
+        {
+            try
+            {
+                Mat m = new Mat();
+                videoCaptureTest.Retrieve(m);
+                pictureBox1.Image = m.ToImage<Bgr, byte>().AsBitmap();
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+
+        private void startMaskRCNN()
+        {
+            try
+            {
+                var modelpath = ConfigurationManager.AppSettings["ModelPath"];
+                var configPath = ConfigurationManager.AppSettings["ModelArchitecture"];
+                var coconamespath = ConfigurationManager.AppSettings["CocoClasses"];
+
+                CaffeModel = DnnInvoke.ReadNetFromTensorflow(modelpath, configPath);
+                CaffeModel.SetPreferableBackend(Emgu.CV.Dnn.Backend.OpenCV);
+                CaffeModel.SetPreferableTarget(Target.Cpu);
+
+                CocoClasses = File.ReadAllLines(coconamespath);
+
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+
+        }
     }
+
 }
