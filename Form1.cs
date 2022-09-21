@@ -25,13 +25,12 @@ namespace WinForms_ObjectDetection
         {
             try
             {
-                Rectangle A1 = new Rectangle(80, 120, 190, 150);
-                Rectangle A2 = new Rectangle(250, 150, 190, 190);
-                Rectangle A3 = new Rectangle(420, 200, 190, 180);
-
-                Rectangle A4 = new Rectangle(280, 40,110, 70);
-                Rectangle A5 = new Rectangle(400, 70, 110, 80);
-                Rectangle A6 = new Rectangle(520, 80, 110, 100);
+                Rectangle A1 = new Rectangle(290, 240, 110, 80);
+                Rectangle A2 = new Rectangle(210, 220, 110, 80);
+                Rectangle A3 = new Rectangle(130, 200, 110, 80);
+                Rectangle A4 = new Rectangle(390, 150, 90, 70);
+                Rectangle A5 = new Rectangle(310, 160, 90, 50);
+                Rectangle A6 = new Rectangle(240, 140, 90, 50);
 
                 var rois = new List<Rectangle>(); // List of ROIs
                 rois.Add(A1);
@@ -48,7 +47,7 @@ namespace WinForms_ObjectDetection
                 var blob = DnnInvoke.BlobFromImage(img, 1.0, frame.Size, swapRB: true);
                 CaffeModel.SetInput(blob);
 
-                foreach (var roi in rois)
+                foreach (var (roi, n) in rois.Select((roi, n) => (roi, n)))
                 {
                    img.Draw(roi, new Bgr(0, 255, 0), 2);
                 }
@@ -57,11 +56,11 @@ namespace WinForms_ObjectDetection
                 string[] outnames = new string[] { "detection_out_final" };
                 CaffeModel.Forward(output, outnames);
 
-                var threshold = 0.6;
+                var threshold = 0.4;
                 int numDetections = output[0].SizeOfDimension[2];
                 int numClasses = 90;
-
                 var bboxes = output[0].GetData();
+                List<int> list = new List<int>();
 
                 for (int i = 0; i < numDetections; i++)
                 {
@@ -71,10 +70,10 @@ namespace WinForms_ObjectDetection
                         int classID = Convert.ToInt32(bboxes.GetValue(0, 0, i, 1));
 
                         //only car
-                        //if (classID != 3)
-                        //{
-                        //    continue;
-                        //}
+                        if (classID != 2)
+                        {
+                            continue;
+                        }
 
                         int left = Convert.ToInt32((float)bboxes.GetValue(0, 0, i, 3) * img.Cols);
                         int top = Convert.ToInt32((float)bboxes.GetValue(0, 0, i, 4) * img.Rows);
@@ -94,9 +93,18 @@ namespace WinForms_ObjectDetection
                             if (roi.Contains(WeightedCentroid))
                             {
                                 img.Draw(roi, new Bgr(0, 0, 255), 2);
-                                updateDatabase("A" + (n+1));
+                                list.Add((n + 1));
                             }
+                        }
 
+                        foreach (var (roi, n) in rois.Select((roi, n) => (roi, n)))
+                        {
+                            updateDatabase("A" + (n + 1), 0);
+                        }
+
+                        foreach (var n in list)
+                        {
+                            updateDatabase("A" + n, 1);
                         }
 
                         var labels = CocoClasses[classID];
@@ -117,13 +125,13 @@ namespace WinForms_ObjectDetection
             }
         }
 
-        public void updateDatabase(string oznaka)
+        public void updateDatabase(string oznaka, int zauzeto)
         {
             try
             {
                 cmd = new SqlCommand("update Mjesto set Zauzeto=@zauzeto where Oznaka=@oznaka", con);
                 con.Open();
-                cmd.Parameters.AddWithValue("@zauzeto", 1);
+                cmd.Parameters.AddWithValue("@zauzeto", zauzeto);
                 cmd.Parameters.AddWithValue("@oznaka", oznaka);
                 cmd.ExecuteNonQuery();
                 con.Close();

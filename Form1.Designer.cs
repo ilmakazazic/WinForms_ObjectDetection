@@ -40,7 +40,7 @@
             this.btnStartCamera.BackColor = System.Drawing.Color.MediumAquamarine;
             this.btnStartCamera.Font = new System.Drawing.Font("Verdana", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
             this.btnStartCamera.ForeColor = System.Drawing.SystemColors.ControlLightLight;
-            this.btnStartCamera.Location = new System.Drawing.Point(652, 24);
+            this.btnStartCamera.Location = new System.Drawing.Point(371, 26);
             this.btnStartCamera.Name = "btnStartCamera";
             this.btnStartCamera.Size = new System.Drawing.Size(250, 46);
             this.btnStartCamera.TabIndex = 1;
@@ -58,15 +58,15 @@
             this.panel2.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panel2.Location = new System.Drawing.Point(0, 0);
             this.panel2.Name = "panel2";
-            this.panel2.Size = new System.Drawing.Size(1584, 793);
+            this.panel2.Size = new System.Drawing.Size(958, 793);
             this.panel2.TabIndex = 2;
             // 
             // pictureBox1
             // 
             this.pictureBox1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.pictureBox1.Location = new System.Drawing.Point(298, 98);
+            this.pictureBox1.Location = new System.Drawing.Point(-1, 103);
             this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(976, 547);
+            this.pictureBox1.Size = new System.Drawing.Size(956, 540);
             this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
             this.pictureBox1.TabIndex = 0;
             this.pictureBox1.TabStop = false;
@@ -77,7 +77,7 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoScroll = true;
             this.AutoSize = true;
-            this.ClientSize = new System.Drawing.Size(1584, 793);
+            this.ClientSize = new System.Drawing.Size(958, 793);
             this.Controls.Add(this.panel2);
             this.Name = "Form1";
             this.Text = "Form1";
